@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Rock Paper Scissors</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .choices {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .choice {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .choice:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .choice.active {
+            border-color: #00ff00;
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        #result {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            min-height: 2rem;
+        }
+
+        #computer-choice {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #ff4444;
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 2rem auto 0;
+            padding: 0.8rem 2rem;
+            background: #ff4444;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #cc3333;
+            transform: translateY(-2px);
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rock Paper Scissors</h1>
+        <div class="score-board">
+            <div>Player: <span id="player-score">0</span></div>
+            <div>Computer: <span id="computer-score">0</span></div>
+        </div>
+        <div class="choices">
+            <div class="choice" data-choice="rock">✊</div>
+            <div class="choice" data-choice="paper">✋</div>
+            <div class="choice" data-choice="scissors">✌️</div>
+        </div>
+        <div id="result"></div>
+        <div id="computer-choice"></div>
+        <button class="reset-btn" onclick="resetGame()">Reset Game</button>
+    </div>
+
+    <script>
+        const choices = document.querySelectorAll('.choice');
+        const result = document.getElementById('result');
+        const computerChoiceDisplay = document.getElementById('computer-choice');
+        const playerScoreDisplay = document.getElementById('player-score');
+        const computerScoreDisplay = document.getElementById('computer-score');
+
+        let playerScore = 0;
+        let computerScore = 0;
+        let playerChoiceHistory = [];
+
+        const choiceMap = {
+            'rock': '✊',
+            'paper': '✋',
+            'scissors': '✌️'
+        };
+
+        const winningCombinations = {
+            'rock': 'scissors',
+            'paper': 'rock',
+            'scissors': 'paper'
+        };
+
+        function getComputerChoice() {
+            // Weighted AI based on player's history
+            if (playerChoiceHistory.length > 2) {
+                const lastChoices = playerChoiceHistory.slice(-3);
+                const mostCommon = lastChoices.sort((a, b) =>
+                    lastChoices.filter(v => v === a).length -
+                    lastChoices.filter(v => v === b).length
+                ).pop();
+
+                // Counter the player's most common choice
+                const counters = {
+                    'rock': 'paper',
+                    'paper': 'scissors',
+                    'scissors': 'rock'
+                };
+                
+                return Math.random() < 0.7 ? counters[mostCommon] : getRandomChoice();
+            }
+            return getRandomChoice();
+        }
+
+        function getRandomChoice() {
+            const options = ['rock', 'paper', 'scissors'];
+            return options[Math.floor(Math.random() * options.length)];
+        }
+
+        function playGame(playerChoice) {
+            choices.forEach(choice => choice.classList.remove('active'));
+            const selectedChoice = document.querySelector(`[data-choice="${playerChoice}"]`);
+            selectedChoice.classList.add('active');
+
+            playerChoiceHistory.push(playerChoice);
+            const computerChoice = getComputerChoice();
+            const winner = determineWinner(playerChoice, computerChoice);
+
+            animateChoices();
+            setTimeout(() => {
+                displayResult(winner, playerChoice, computerChoice);
+                updateScore(winner);
+            }, 1000);
+        }
+
+        function determineWinner(player, computer) {
+            if (player === computer) return 'tie';
+            if (winningCombinations[player] === computer) return 'player';
+            return 'computer';
+        }
+
+        function animateChoices() {
+            choices.forEach(choice => choice.classList.add('shake'));
+            setTimeout(() => {
+                choices.forEach(choice => choice.classList.remove('shake'));
+            }, 500);
+        }
+
+        function displayResult(winner, playerChoice, computerChoice) {
+            computerChoiceDisplay.textContent = `Computer chose: ${choiceMap[computerChoice]}`;
+            switch (winner) {
+                case 'tie':
+                    result.textContent = "It's a tie!";
+                    result.style.color = '#fff';
+                    break;
+                case 'player':
+                    result.textContent = 'You win!';
+                    result.style.color = '#00ff00';
+                    break;
+                case 'computer':
+                    result.textContent = 'Computer wins!';
+                    result.style.color = '#ff4444';
+                    break;
+            }
+        }
+
+        function updateScore(winner) {
+            if (winner === 'player') playerScore++;
+            if (winner === 'computer') computerScore++;
+            playerScoreDisplay.textContent = playerScore;
+            computerScoreDisplay.textContent = computerScore;
+        }
+
+        function resetGame() {
+            playerScore = 0;
+            computerScore = 0;
+            playerChoiceHistory = [];
+            playerScoreDisplay.textContent = '0';
+            computerScoreDisplay.textContent = '0';
+            result.textContent = '';
+            computerChoiceDisplay.textContent = '';
+            choices.forEach(choice => choice.classList.remove('active'));
+        }
+
+        choices.forEach(choice => {
+            choice.addEventListener('click', () => {
+                const playerChoice = choice.dataset.choice;
+                playGame(playerChoice);
+            });
+        });
+    </script>
+</body>
+</html>
